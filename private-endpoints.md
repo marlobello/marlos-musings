@@ -106,7 +106,7 @@ If all is configured correctly, the DNS resolution flow will go something like t
 
 >**Private Resolver:** Mr. Azure Provided DNS, sir. Its me, Private Resolver from Company ABC's VNet. I'm looking for a private endpoint, and here are my linked Private DNS Zones...its probably in there somewhere.
 
->**Azure Provided DNS:** Well lets take a look, shall we. I see that the public DNS record has been updated so that the canonical name is a .privateendpoint. DNS name. And if I just look through your linked private DNS Zones...ah yes...here it is. You have an A RECORD for it right here. You can respond with 10.100.1.25.
+>**Azure Provided DNS:** Well lets take a look, shall we. I see that the public DNS record has been updated so that the canonical name is a .privatelink. DNS name. And if I just look through your linked private DNS Zones...ah yes...here it is. You have an A RECORD for it right here. You can respond with 10.100.1.25.
 
 >**Private Resolver:** Thanks Azure Provided DNS, you are the best...sir.
 
