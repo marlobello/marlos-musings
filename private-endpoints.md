@@ -35,10 +35,10 @@ Think about it, every Azure customer in the world is using this IP address, but 
 ![VNet linking](/images/vnet-link.png)
 
 > [!NOTE]
-> Auto-Registration for applies only to virtual machines. You should never need to use this option for Private Endpoints. This would only be used with a custom private DNS zone specific to your company. If you are using an different DNS solution (like Active Directory), you likely do not need this option ever.
+> Auto-Registration applies only to virtual machines and will create A RECORDS for virtual machines in the associated VNet. You should never need to use this option for Private Endpoints. This would only be used with a custom private DNS zone specific to your company. If you are using an different DNS solution (like Active Directory), you likely do not need this option ever.
 
 > [!NOTE]
-> Fallback to Internet
+> Fallback to Internet is a feature that solves a unique situation where a third party has a private endpoint enabled, but wants you to access its public endpoint. This feature tells **your** DNS resolution to check for the public endpoint if it is not found in **your** private endpoint zones.
 
 You may put your own DNS solution into the DNS resolution VNet. This could be BIND, Active Directory DNS, or anything really. The key point is that the resolution need to take place in that VNet. So if you have a distributed DNS architecture (like Active Directory), where the resolution could take place somewhere else (like an on premises server)--you need an independent DNS resolver. Enter Azure DNS Private Resolver. This is an simplistic PaaS DNS service that you can forward private endpoint DNS resolution to. This forces all resolution of private endpoint related zones to take place in the correctly configured VNet.
 
