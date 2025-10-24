@@ -52,7 +52,7 @@ To sum up, you need:
 - Private DNS zones linked to the above VNet
 - You'll likely need to conditionally forward private endpoint zones from your primary DNS solution to that DNS service.
 
-## DNS Resolution
+## Public DNS Records
 
 Private Link-able services (is that even a word?) have designated public DNS zones. We need to essentially override that resolution. It's usually best to use the defined DNS zones and avoid custom zones (i.e., storageaccount123.company.com), because most services don't support custom FQDNs.
 
@@ -84,6 +84,8 @@ Two things to note:
 
 > [!NOTE]
 > It's a common misconception that you should begin using the .privatelink. FQDN after you create the private endpoint. In reality, if DNS is properly configured, you should continue to use the original FQDN. Even when implementing conditional forwarding to the private resolver—forward the original FQDN, and **not** the .privatelink. domain.
+
+## DNS Resolution - The Play
 
 If all is configured correctly, the DNS resolution flow will go something like this:
 
