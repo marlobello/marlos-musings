@@ -46,11 +46,18 @@ Consider if you are using Active Directory as your primary DNS service. You have
 
 Enter Azure DNS Private Resolver. This is a simplistic PaaS DNS service that you can conditionally forward private endpoint DNS resolution to. You would create a specific VNet for the Private Resolver and configure it to use the Azure provided DNS service. All other VNets in your environment would likely be configured to point to your domain controllers. You should conditionally forward any private endpoint FQDNs that you plan to use to the Inbound Endpoint of the Private Resolver. This forces all resolution of private endpoint related zones to take place in the correctly configured VNet. 
 
+![Private Endpoint Networking](/images/PrivateEndpointNetworking.png)
+
+>[!NOTE]
+>The red lines represent network routing. The other colored lines represent configurations, not network paths.
+
+
 To sum up, you need:
 
 - A DNS service in a VNet that is configured to use the Azure provided DNS service (Azure DNS Private Resolver is recommended)
 - Private DNS zones linked to the above VNet
-- You'll likely need to conditionally forward private endpoint zones from your primary DNS solution to that DNS service.
+- Private endpoints configured to register with the appropriate private DNS zone.
+- You'll likely need to conditionally forward private endpoint zones from your primary DNS solution to the above mentioned DNS service.
 
 ## Public DNS Records
 
