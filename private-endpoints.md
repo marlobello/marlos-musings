@@ -35,7 +35,7 @@ Think about it: every Azure customer in the world is using this IP address, but 
 ![VNet linking](/images/vnet-link.png)
 
 > [!NOTE]
-> Auto-Registration applies only to virtual machines and will create A records for virtual machines in the associated VNet. You should never need to use this option for Private Endpoints. This would only be used with a custom private DNS zone specific to your company. If you are using a different DNS solution (like Active Directory), you likely don't need this option ever.
+> Auto-Registration applies only to virtual machines and will create A RECORDS for virtual machines in the associated VNet. You should never need to use this option for Private Endpoints. This would only be used with a custom private DNS zone specific to your company. If you are using a different DNS solution (like Active Directory), you likely don't need this option ever.
 
 > [!NOTE]
 > Fallback to Internet is a feature that solves a unique situation where a third party has a private endpoint enabled, but wants you to access its public endpoint. This feature tells **your** DNS resolution to check for the public endpoint if it is not found in **your** private endpoint zones.
