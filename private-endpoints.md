@@ -91,22 +91,22 @@ If all is configured correctly, the DNS resolution flow will go something like t
 
 >**Client:** Hey Domain Controller, you are my DNS server. I'm looking for *hbteststroageaccount.blob.core.windows.net*
 
-**Domain Controller:** Oh hey Client, I actually can't answer that, I need to go ask the Azure Private Resolver.
+>**Domain Controller:** Oh hey Client, I actually can't answer that, I need to go ask the Azure Private Resolver.
 
-**Domain Controller:** Yo Private Resolver, Client is looking for a private endpoint. I need you to do that magic thing that you do.
+>**Domain Controller:** Yo Private Resolver, Client is looking for a private endpoint. I need you to do that magic thing that you do.
 
-**Private Resolver:** Sure thing, one moment.
+>**Private Resolver:** Sure thing, one moment.
 
-**Private Resolver:** Mr. Azure Provided DNS, sir. Its me, Private Resolver from Company ABC's VNet. I'm looking for a private endpoint, and here are my linked Private DNS Zones...its probably in there somewhere.
+>**Private Resolver:** Mr. Azure Provided DNS, sir. Its me, Private Resolver from Company ABC's VNet. I'm looking for a private endpoint, and here are my linked Private DNS Zones...its probably in there somewhere.
 
-**Azure Provided DNS:** Well lets take a look shall we. I see that the public DNS record has been updated so that the canonical name is a .privateendpoint. DNS name. And if I just look through your linked private DNS Zones...ah yes...here it is. You have an A RECORD for it right here. You can respond with 10.100.1.25.
+>**Azure Provided DNS:** Well lets take a look shall we. I see that the public DNS record has been updated so that the canonical name is a .privateendpoint. DNS name. And if I just look through your linked private DNS Zones...ah yes...here it is. You have an A RECORD for it right here. You can respond with 10.100.1.25.
 
-**Private Resolver:** Thanks Azure Provided DNS, you are the best...sir.
+>**Private Resolver:** Thanks Azure Provided DNS, you are the best...sir.
 
-**Azure Provided DNS:** Remember, if I don't find it in your linked private DNS zones, I can't give you the public endpoint's address unless you enabled Fallback to Internet!
+>**Azure Provided DNS:** Remember, if I don't find it in your linked private DNS zones, I can't give you the public endpoint's address unless you enabled Fallback to Internet!
 
-**Private Resolver:** Ok, Domain Controller, I got that address for you. 10.100.1.25.
+>**Private Resolver:** Ok, Domain Controller, I got that address for you. 10.100.1.25.
 
-**Domain Controller:** Alright Client, the private address is 10.100.1.25.
+>**Domain Controller:** Alright Client, the private address is 10.100.1.25.
 
-**Client:** Thanks Domain Controller, now lets just hope that Firewall lets me through!
+>**Client:** Thanks Domain Controller, now lets just hope that Firewall lets me through!
