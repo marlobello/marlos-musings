@@ -89,7 +89,7 @@ Two things to note:
 
 If all is configured correctly, the DNS resolution flow will go something like this:
 
-**Client:** Hey Domain Controller, you are my DNS server. I'm looking for *hbteststroageaccount.blob.core.windows.net*
+>**Client:** Hey Domain Controller, you are my DNS server. I'm looking for *hbteststroageaccount.blob.core.windows.net*
 
 **Domain Controller:** Oh hey Client, I actually can't answer that, I need to go ask the Azure Private Resolver.
 
