@@ -9,6 +9,3 @@ Below are some topics that frequently come up in my discussions with customers. 
 
 ## [Private Endpoint Disaster Recovery](./private-endpoint-dr.md)
 
-#### Azure SQL
-#### Storage Accounts
-#### Key Vault
