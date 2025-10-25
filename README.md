@@ -5,9 +5,10 @@ Below are some topics that frequently come up in my discussions with customers. 
 > [!NOTE]
 > Everything I share here comes from my own experience and perspective—it’s not official Microsoft guidance.
 
-## Private Endpoints
+## [Private Endpoints](./private-endpoints.md)
 
-### Disaster Recovery
+## [Private Endpoint Disaster Recovery](./private-endpoint-dr.md)
+
 #### Azure SQL
 #### Storage Accounts
 #### Key Vault

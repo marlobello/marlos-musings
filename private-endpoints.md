@@ -2,9 +2,15 @@
 
 Private Endpoints can be somewhat difficult to understand until one day it just clicks. Part of the challenge is that DNS is 90% of the solution (and thus 90% of the related problems), but not all traditional DNS thinking applies.
 
+> [!TIP]
+> For comprehensive information about Private Endpoints, see the [Azure Private Endpoint DNS configuration guide](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
+
 ## Organization
 
 Each Private Endpoint service type has a corresponding "privatelink" Private DNS Zone. For each service that you use, you should create one (and generally only one) Private DNS Zone for your network. If you have multiple networks (likely independent routing and certainly independent DNS resolution), you may need a second set of these Zones.
+
+> [!TIP]
+> For a complete list of Private DNS zone values for different Azure services, see [Azure Private Endpoint private DNS zone values](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
 
 These zones should live in a Shared Services location and be managed by a Cloud Ops team. It makes sense to group them into a single resource group.
 
@@ -28,9 +34,15 @@ The secret to private endpoint DNS resolution is that it requires *magic*. Speci
 
 ![DNS service](/images/dns-service.png)
 
-This service uses a *magic IP* of 168.63.129.16. But you can't simply forward your DNS requests to this IP address and expect it to work. DNS responses **will vary** based upon which Azure VNet the request is coming from!
+This service uses a *magic IP* of 168.63.129.16. But you can't simply forward your DNS requests to this IP address and expect it to work. DNS responses **will vary** based on which Azure VNet the request is coming from!
+
+> [!TIP]
+> To learn more about this special IP address, see [What is IP address 168.63.129.16?](https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16)
 
 Think about it: every Azure customer in the world is using this IP address, but you only want resolution for your endpoints, not everybody else's. This requires that you **link** your Private DNS Zones to your VNet(s). Depending on how you are configuring DNS outside of Private Endpoints, you may only need to link private DNS zones to a single VNet where your DNS servers live.
+
+> [!TIP]
+> For detailed information about virtual network links, see [What is a virtual network link?](https://learn.microsoft.com/en-us/azure/dns/private-dns-virtual-network-links)
 
 ![VNet linking](/images/vnet-link.png)
 
@@ -44,7 +56,10 @@ You may put your own DNS solution into the DNS resolution VNet. This could be BI
 
 Consider if you are using Active Directory as your primary DNS service. You have domain controllers on-premises as well as in Azure. DNS configuration is synced across all domain controllers. Within Active Directory DNS, you configure specific upstream DNS servers that meet your security requirements (e.g., Cloudflare or OpenDNS). You don't want to have your domain controllers use the Azure provided DNS service, thus they cannot do private endpoint resolution. Additionally, if a DNS resolution took place on your on-premises domain controller, private endpoint resolution wouldn't work anyway.
 
-Enter Azure DNS Private Resolver. This is a simplistic PaaS DNS service that you can conditionally forward private endpoint DNS resolution to. You would create a specific VNet for the Private Resolver and configure it to use the Azure provided DNS service. All other VNets in your environment would likely be configured to point to your domain controllers. You should conditionally forward any private endpoint FQDNs that you plan to use to the Inbound Endpoint of the Private Resolver. This forces all resolution of private endpoint related zones to take place in the correctly configured VNet. 
+Enter Azure DNS Private Resolver. This is a simplistic PaaS DNS service that you can conditionally forward private endpoint DNS resolution to. You would create a specific VNet for the Private Resolver and configure it to use the Azure provided DNS service. All other VNets in your environment would likely be configured to point to your domain controllers. You should conditionally forward any private endpoint FQDNs that you plan to use to the Inbound Endpoint of the Private Resolver. This forces all resolution of private endpoint related zones to take place in the correctly configured VNet.
+
+> [!TIP]
+> To get started with Azure DNS Private Resolver, see [What is Azure DNS Private Resolver?](https://learn.microsoft.com/en-us/azure/dns/dns-private-resolver-overview) and [Quickstart: Create an Azure DNS Private Resolver using the Azure portal](https://learn.microsoft.com/en-us/azure/dns/dns-private-resolver-get-started-portal). 
 
 ![Private Endpoint Networking](/images/PrivateEndpointNetworking.png)
 
@@ -59,9 +74,15 @@ To sum up, you need:
 - Private endpoints configured to register with the appropriate private DNS zone.
 - You'll likely need to conditionally forward private endpoint zones from your primary DNS solution to the above mentioned DNS service.
 
+> [!TIP]
+> For guidance on configuring conditional forwarders in Active Directory DNS, see [Administer DNS and create conditional forwarders in a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/manage-dns#create-conditional-forwarders) and [Add-DnsServerConditionalForwarderZone](https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverconditionalforwarderzone).
+
 ## Public DNS Records
 
 Private Link-able services (is that even a word?) have designated public DNS zones. We need to essentially override that resolution. It's usually best to use the defined DNS zones and avoid custom zones (i.e., storageaccount123.company.com), because most services don't support custom FQDNs.
+
+> [!TIP]
+> For specific examples of how DNS resolution works with different Azure services and their private endpoints, see [Azure Private Endpoint DNS integration scenarios](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns-integration).
 
 See the public DNS resolution of a blob storage account before a private endpoint is created:
 
@@ -91,6 +112,9 @@ Two things to note:
 
 > [!NOTE]
 > It's a common misconception that you should begin using the .privatelink. FQDN after you create the private endpoint. In reality, if DNS is properly configured, you should continue to use the original FQDN. Even when implementing conditional forwarding to the private resolver—forward the original FQDN, and **not** the .privatelink. domain.
+
+> [!TIP]
+> For more detailed DNS configuration guidance, see [Configure DNS forwarding for Azure Files using VMs or Azure DNS Private Resolver](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-networking-dns) and [Resolve Azure and on-premises domains](https://learn.microsoft.com/en-us/azure/dns/private-resolver-hybrid-dns).
 
 ## DNS Resolution - The Play
 
