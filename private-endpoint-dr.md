@@ -20,10 +20,10 @@ What truly makes geo-replication unique from a private endpoint perspective, is 
 
 In the event of a failover, public DNS record for the failover group will swap to point to the newly promoted primary endpoint and your diaster region private endpoint will be immediately be available and service read/write operations.
 
->[!NOTE]
+>[!TIP]
 > This blog post describes this process in great detail. https://blog.hompus.nl/2021/04/27/using-private-link-with-a-failover-group-for-azure-sql-database/
 
->[!NOTE]
+>[!TIP]
 >For more information about Azure SQL Active Geo-replication, see [Active geo-replication](https://learn.microsoft.com/en-us/azure/azure-sql/database/active-geo-replication-overview?view=azuresql&tabs=tsql)  
 >For more information about Azure SQL Failover Groups, see [Failover groups overview & best practices](https://learn.microsoft.com/en-us/azure/azure-sql/database/failover-group-sql-db?view=azuresql)
 
@@ -44,4 +44,12 @@ To protect against a complete region failure, you must follow the general guidan
 ![Private Endpoint DR](./images/private-endpoint-dr.png)
 
 >[!NOTE]
-> >The red lines represent network routing. The other colored lines represent configurations, not network paths.
+> The red lines represent network routing. The other colored lines represent configurations, not network paths.
+
+Alternatively, there is an option to have a secondary Private DNS zone pre-created with the disaster recovery private endpoint already configured. However, I don't recommend this because:
+- This could be confusing because the private IP address for the storage account could change based upon where the query is coming from.
+- Connections coming from on-premise can only be pointed to one of the private DNS zones.
+- This likely does not fit in with enterprise DNS standards and requirements.
+
+>[!TIP]
+>For more information about Storage Account failover, see [Failover considerations for storage accounts with private endpoints](https://learn.microsoft.com/en-us/azure/storage/common/storage-failover-private-endpoints)
