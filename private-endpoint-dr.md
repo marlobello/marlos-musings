@@ -46,10 +46,17 @@ To protect against a complete region failure, you must follow the general guidan
 >[!NOTE]
 > The red lines represent network routing. The other colored lines represent configurations, not network paths.
 
-Alternatively, there is an option to have a secondary Private DNS zone pre-created with the disaster recovery private endpoint already configured. However, I don't recommend this because:
-- This could be confusing because the private IP address for the storage account could change based upon where the query is coming from.
-- Connections coming from on-premise can only be pointed to one of the private DNS zones.
-- This likely does not fit in with enterprise DNS standards and requirements.
+Alternatively, there is an option to have a second Private DNS zone pre-created with the disaster recovery private endpoint already configured. This allows you to failover the private endpoints by simply altering the conditional forwarding rule. However, I generally do not recommend this because:
+- Other non-DR private endpoints that live in the DR region may need to be reconfigured.
+- Private endpoints in other regions not affected by the DR could inadvertently be impacted by cutting over to a new private DNS zone.
+- There is more likely to be confusion where current authoritative DNS records reside.
 
 >[!TIP]
 >For more information about Storage Account failover, see [Failover considerations for storage accounts with private endpoints](https://learn.microsoft.com/en-us/azure/storage/common/storage-failover-private-endpoints)
+
+### Key Vault
+
+Azure Key Vault does not currently offer customer managed geo-redundancy. Microsoft does maintain failover capability in the event of a non-recoverable region outage. The timing of this failover is at the discretion of Microsoft. To ensure that Key Vaults (and their associated private endpoints) are able to meet customer defined SLAs, a secondary key vault must be maintained in the DR region. Synchronization of these keys, secretes, and certificates between key vaults is NOT automatic. Given that a DR key vault would be maintained, private endpoints to the DR key vault will not conflict with the production key vault and both private endpoints can co-exist. In the event of a DR, application configuration changes may be required to access the DR key vault.
+
+>[!TIP]
+>For more information about key vault resiliency, see [Reliability in Key Vault](https://learn.microsoft.com/en-us/azure/reliability/reliability-key-vault)

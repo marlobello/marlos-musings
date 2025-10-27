@@ -81,9 +81,6 @@ To sum up, you need:
 
 Private Link-able services (is that even a word?) have designated public DNS zones. We need to essentially override that resolution. It's usually best to use the defined DNS zones and avoid custom zones (i.e., storageaccount123.company.com), because most services don't support custom FQDNs.
 
-> [!TIP]
-> For specific examples of how DNS resolution works with different Azure services and their private endpoints, see [Azure Private Endpoint DNS integration scenarios](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns-integration).
-
 See the public DNS resolution of a blob storage account before a private endpoint is created:
 
     hbteststroageaccount.blob.core.windows.net
@@ -103,7 +100,7 @@ And after the private endpoint is created:
 
     Non-authoritative answer:
     Name:    hbteststroageaccount.privatelink.blob.core.windows.net
-    Address:  192.168.132.197
+    Address:  10.100.1.25
     Aliases:  hbteststroageaccount.blob.core.windows.net
 
 Two things to note:
@@ -114,7 +111,7 @@ Two things to note:
 > It's a common misconception that you should begin using the .privatelink. FQDN after you create the private endpoint. In reality, if DNS is properly configured, you should continue to use the original FQDN. Even when implementing conditional forwarding to the private resolver—forward the original FQDN, and **not** the .privatelink. domain.
 
 > [!TIP]
-> For more detailed DNS configuration guidance, see [Configure DNS forwarding for Azure Files using VMs or Azure DNS Private Resolver](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-networking-dns) and [Resolve Azure and on-premises domains](https://learn.microsoft.com/en-us/azure/dns/private-resolver-hybrid-dns).
+> For more detailed DNS configuration guidance, see [Configure DNS forwarding for Azure Files using VMs or Azure DNS Private Resolver](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-networking-dns), [Resolve Azure and on-premises domains](https://learn.microsoft.com/en-us/azure/dns/private-resolver-hybrid-dns) and [Azure Private Endpoint DNS integration scenarios](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns-integration).
 
 ## DNS Resolution - The Play
 
