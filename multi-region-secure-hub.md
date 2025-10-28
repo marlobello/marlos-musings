@@ -34,7 +34,7 @@ If you do not have contiguous CIDR range in the other region, you must add each 
 
 The Gateway Subnet has the more problematic route tables. Luckily there aren't many of them in a typical architecture. This architecture works with both Express Route and Site-to-site VPN.
 
-The rub here is that the GatewaySubnet already knows the routes each of the spokes and the other hub. Without a properly configured route table, it will by pass the firewall entirely. This also could lead to asymmetric routing because traffic one way will route through the firewall, but skip it going the other direction.
+The rub here is that the GatewaySubnet already knows the routes to each of the local spokes as well as the other hub. Without a properly configured route table, it will bypass the firewall entirely. This also could lead to asymmetric routing because traffic one way will route through the firewall, but skip it going the other direction.
 
 The solution is to put explicit routes for each local spoke to go to the firewall. You cannot use summarization routes in this case because routing will follow the most specific route (the one is already knows from peering). In addition, you should route the remote hub to the local firewall as well, to better control East-West traffic.
 
