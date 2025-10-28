@@ -56,7 +56,24 @@ Alternatively, there is an option to have a second Private DNS zone pre-created 
 
 ### Key Vault
 
-Azure Key Vault does not currently offer customer managed geo-redundancy. Microsoft does maintain failover capability in the event of a non-recoverable region outage. The timing of this failover is at the discretion of Microsoft. To ensure that Key Vaults (and their associated private endpoints) are able to meet customer defined SLAs, a secondary key vault must be maintained in the DR region. Synchronization of these keys, secretes, and certificates between key vaults is NOT automatic. Given that a DR key vault would be maintained, private endpoints to the DR key vault will not conflict with the production key vault and both private endpoints can co-exist. In the event of a DR, application configuration changes may be required to access the DR key vault.
+Azure Key Vault does not currently offer customer managed geo-redundancy. Microsoft does maintain failover capability in the event of a non-recoverable region outage. The timing of this failover is at the discretion of Microsoft. To ensure that Key Vaults (and their associated private endpoints) are able to meet customer defined SLAs, a secondary key vault must be maintained in the DR region.
+
+Synchronization of these keys, secretes, and certificates between key vaults is NOT automatic. Given that a DR key vault would be maintained, private endpoints to the DR key vault will not conflict with the production key vault and both private endpoints can co-exist. In the event of a DR, application configuration changes may be required to access the DR key vault.
 
 >[!TIP]
 >For more information about key vault resiliency, see [Reliability in Key Vault](https://learn.microsoft.com/en-us/azure/reliability/reliability-key-vault)
+
+### Azure Managed Redis
+
+Similar to Azure SQL and Storage Accounts, Azure Managed Redis has the ability to mirror data to a secondary region. Redis, however, supports an active-active setup where you can read and write to either copy. Each copy is an independent Azure resource, and each can have its own Private Endpoint.
+
+This allows you to stand up both private endpoints at the same time (similar to Key Vault). Synchronization of data between each cache is automatic and the data in the secondary region is immediately accessible.
+
+Also similar to Key Vault, your calling client application must be able to switch to call the other private endpoint.
+
+Azure Managed Redis does support an active-active configuration front-ended by a public load balancer. You may be able to achieve similar with a non-Azure internal load balancer and private endpoints. You cannot achieve this with an Azure internal load balancer because:
+- Azure Internal Load Balancers do not support private endpoints in the back end pool
+- Azure Internal Load Balancers are a regional resources, Azure does not currently offer an global internal load balancer.
+
+>[!TIP]
+>For more information about Azure Managed Redis, see [Configure active geo-replication for Azure Managed Redis instances](https://learn.microsoft.com/en-us/azure/redis/how-to-active-geo-replication)
