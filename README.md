@@ -5,8 +5,10 @@ Below are some topics that frequently come up in my discussions with customers. 
 > [!NOTE]
 > Everything I share here comes from my own experience and perspective—it’s not official Microsoft guidance.
 
-## [Private Endpoints](./private-endpoints.md)
+### [Private Endpoints](./private-endpoints.md)
 
-## [Private Endpoint Disaster Recovery](./private-endpoint-dr.md)
+### [Private Endpoint Disaster Recovery](./private-endpoint-dr.md)
 
-## [Private Endpoints in US Gov Cloud](./gov-private-endpoints.md)
+### [Private Endpoints in US Gov Cloud](./gov-private-endpoints.md)
+
+### [Multi-region Secure Hub and Spoke](./multi-region-secure-hub.md)
