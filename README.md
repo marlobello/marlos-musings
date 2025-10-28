@@ -9,3 +9,4 @@ Below are some topics that frequently come up in my discussions with customers. 
 
 ## [Private Endpoint Disaster Recovery](./private-endpoint-dr.md)
 
+## [Private Endpoints in US Gov Cloud](./gov-private-endpoints.md)
