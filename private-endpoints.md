@@ -7,10 +7,10 @@ Private Endpoints can be somewhat difficult to understand until one day it just 
 
 ## Organization
 
-Each Private Endpoint service type has a corresponding "privatelink" Private DNS Zone. For each service that you use, you should create one (and generally only one) Private DNS Zone for your network. If you have multiple networks (likely independent routing and certainly independent DNS resolution), you may need a second set of these Zones.
+Each Private Endpoint service type has a corresponding "privatelink" private DNS zone. For each service that you use, you should create one (and generally only one) private DNS zone for your network. If you have multiple networks (likely independent routing and certainly independent DNS resolution), you may need a second set of these zones.
 
 > [!TIP]
-> For a complete list of Private DNS zone values for different Azure services, see [Azure Private Endpoint private DNS zone values](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
+> For a complete list of private DNS zone values for different Azure services, see [Azure Private Endpoint private DNS zone values](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
 
 These zones should live in a Shared Services location and be managed by a Cloud Ops team. It makes sense to group them into a single resource group.
 
@@ -25,7 +25,7 @@ Your first private endpoint is the most work because you need to stand up and co
 |Task|Frequency|
 |----|---------|
 |Build DNS Infrastructure|Once|
-|Create Private DNS zone and conditional forwarding|Once per private endpoint service type|
+|Create private DNS zone and conditional forwarding|Once per private endpoint service type|
 |Connect Private Endpoint to DNS zone|Once per private endpoint|
 
 ## DNS Infrastructure
@@ -39,7 +39,7 @@ This service uses a *magic IP* of 168.63.129.16. But you can't simply forward yo
 > [!TIP]
 > To learn more about this special IP address, see [What is IP address 168.63.129.16?](https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16)
 
-Think about it: every Azure customer in the world is using this IP address, but you only want resolution for your endpoints, not everybody else's. This requires that you **link** your Private DNS Zones to your VNet(s). Depending on how you are configuring DNS outside of Private Endpoints, you may only need to link private DNS zones to a single VNet where your DNS servers live.
+Think about it: every Azure customer in the world is using this IP address, but you only want resolution for your endpoints, not everybody else's. This requires that you **link** your private DNS zones to your VNet(s). Depending on how you are configuring DNS outside of Private Endpoints, you may only need to link private DNS zones to a single VNet where your DNS servers live.
 
 > [!TIP]
 > For detailed information about virtual network links, see [What is a virtual network link?](https://learn.microsoft.com/en-us/azure/dns/private-dns-virtual-network-links)
