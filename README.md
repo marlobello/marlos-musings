@@ -12,3 +12,5 @@ Below are some topics that frequently come up in my discussions with customers. 
 ### [Private Endpoints in US Gov Cloud](./gov-private-endpoints.md)
 
 ### [Multi-region Secure Hub and Spoke](./multi-region-secure-hub.md)
+
+### [On network vs off network](./on-network.md)
