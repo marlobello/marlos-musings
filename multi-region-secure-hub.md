@@ -20,7 +20,7 @@ Well planned out IP ranges for each region are essential for the success of a mu
 Spoke routing is pretty easy, you set the default route to the IP address of the regional hub firewall. You do need to go touch each of the spokes, and that is no fun...but you can now use Network Manager to push a Routing configuration to all the spokes.
 
 >[!NOTE]
-> Depending upon how you configured your network peering, spoke networks will already be able to connect to the hub network and potentially the on premises network (and vice versa). However, with adding an Azure Firewall or other NVA spoke to spoke communication is not possible. Routing traffic through the firewall has the additional security benefits that come with your chosen solution.
+> Depending upon how you configured your network peering, spoke networks will already be able to connect to the hub network and potentially the on premises network (and vice versa). However, without adding an Azure Firewall or other NVA spoke to spoke communication is not possible. Routing traffic through the firewall has the additional security benefits that come with your chosen solution.
 
 ## Firewall Routing
 
