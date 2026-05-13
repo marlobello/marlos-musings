@@ -5,6 +5,17 @@ Private Endpoints can be somewhat difficult to understand until one day it just 
 > [!TIP]
 > For comprehensive information about Private Endpoints, see the [Azure Private Endpoint DNS configuration guide](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
 
+## What is a Private Endpoint?
+
+A Private Endpoint is a network interface (NIC) in *your* VNet that gets assigned a private IP address from your address space and is wired through Azure Private Link to a specific instance of a PaaS service (a specific storage account, a specific Key Vault, a specific SQL server, etc.). Once it exists, traffic to that PaaS instance can flow over your private network instead of the public internet.
+
+A few things to keep in mind from the start:
+
+- A Private Endpoint targets one **instance** of a service, not the service as a whole. You don't get a private endpoint to "Azure Storage"—you get one to *your* storage account.
+- Many services have multiple **sub-resources** (Azure Storage exposes blob, file, queue, table, and dfs; Cosmos DB exposes Sql, MongoDB, etc.). Each sub-resource you want to reach privately needs its own Private Endpoint.
+- A Private Endpoint is one-way (inbound to the PaaS service). The PaaS service cannot use it to originate traffic into your network.
+- The private IP is reachable like any other VNet IP—across peering, ExpressRoute, and VPN—as long as routing and firewall rules allow it.
+
 ## Organization
 
 Each Private Endpoint service type has a corresponding "privatelink" private DNS zone. For each service that you use, you should create one (and generally only one) private DNS zone for your network. If you have multiple networks (likely independent routing and certainly independent DNS resolution), you may need a second set of these zones.
@@ -56,7 +67,13 @@ You may put your own DNS solution into the DNS resolution VNet. This could be BI
 
 Consider if you are using Active Directory as your primary DNS service. You have domain controllers on-premises as well as in Azure. DNS configuration is synced across all domain controllers. Within Active Directory DNS, you configure specific upstream DNS servers that meet your security requirements (e.g., Cloudflare or OpenDNS). You don't want to have your domain controllers use the Azure provided DNS service, thus they cannot do private endpoint resolution. Additionally, if a DNS resolution took place on your on-premises domain controller, private endpoint resolution wouldn't work anyway.
 
-Enter Azure DNS Private Resolver. This is a simplistic PaaS DNS service that you can conditionally forward private endpoint DNS resolution to. You would create a specific VNet for the Private Resolver and configure it to use the Azure provided DNS service. All other VNets in your environment would likely be configured to point to your domain controllers. You should conditionally forward any private endpoint FQDNs that you plan to use to the Inbound Endpoint of the Private Resolver. This forces all resolution of private endpoint related zones to take place in the correctly configured VNet.
+Enter Azure DNS Private Resolver. This is a simple PaaS DNS service that you can conditionally forward private endpoint DNS resolution to. You would create a dedicated VNet for the Private Resolver and configure it to use the Azure provided DNS service. All other VNets in your environment would continue to point at your domain controllers. You then conditionally forward any private endpoint FQDNs you plan to use from Active Directory DNS to the Inbound Endpoint of the Private Resolver. This forces resolution of private endpoint zones to take place in the correctly configured VNet.
+
+Two important reasons drive this design:
+
+1. **Why conditionally forward from Active Directory at all?** You want your default DNS resolution path to keep using your preferred external resolver (Cloudflare, OpenDNS, etc.) for everything that *isn't* a private endpoint. Conditional forwarding lets you carve out just the private endpoint FQDNs and hand them off to Azure DNS for resolution, while leaving every other lookup alone.
+
+2. **Why forward to a Private Resolver inbound endpoint instead of directly to the Azure DNS magic IP (168.63.129.16)?** Because Active Directory DNS is replicated between your on-premises and Azure domain controllers, the same conditional forwarder will end up running on *both* sides. If the forwarder pointed straight at 168.63.129.16, an on-premises domain controller (which is not in an Azure VNet) would send the query to the magic IP from outside Azure, where it cannot be answered correctly. The result: private endpoints would likely resolve fine for clients in Azure, but fail for clients on-premises. Forwarding to the Private Resolver's inbound endpoint (a routable private IP reachable from both Azure and on-premises) ensures the actual resolution always happens inside the correctly configured Azure VNet, no matter where the original request originated.
 
 > [!TIP]
 > To get started with Azure DNS Private Resolver, see [What is Azure DNS Private Resolver?](https://learn.microsoft.com/en-us/azure/dns/dns-private-resolver-overview) and [Quickstart: Create an Azure DNS Private Resolver using the Azure portal](https://learn.microsoft.com/en-us/azure/dns/dns-private-resolver-get-started-portal). 
@@ -83,25 +100,25 @@ Each Private Link-capable service has a designated public DNS zone, and we essen
 
 See the public DNS resolution of a blob storage account before a private endpoint is created:
 
-    hbteststroageaccount.blob.core.windows.net
+    hbteststorageaccount.blob.core.windows.net
     Server:  XXXX
     Address:  XXX.XXX.XXX.XXX
 
     Non-authoritative answer:
     Name:    blob.lon26prdstr09c.store.core.windows.net
     Address:  20.209.30.1
-    Aliases:  hbteststroageaccount.blob.core.windows.net
+    Aliases:  hbteststorageaccount.blob.core.windows.net
 
 And after the private endpoint is created:
 
-    hbteststroageaccount.blob.core.windows.net
+    hbteststorageaccount.blob.core.windows.net
     Server:  XXXX
     Address:  XXX.XXX.XXX.XXX
 
     Non-authoritative answer:
-    Name:    hbteststroageaccount.privatelink.blob.core.windows.net
+    Name:    hbteststorageaccount.privatelink.blob.core.windows.net
     Address:  10.100.1.25
-    Aliases:  hbteststroageaccount.blob.core.windows.net
+    Aliases:  hbteststorageaccount.blob.core.windows.net
 
 Two things to note:
 - A private IP address is returned (assuming all DNS infrastructure is set up correctly)
@@ -113,28 +130,58 @@ Two things to note:
 > [!TIP]
 > For more detailed DNS configuration guidance, see [Configure DNS forwarding for Azure Files using VMs or Azure DNS Private Resolver](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-networking-dns), [Resolve Azure and on-premises domains](https://learn.microsoft.com/en-us/azure/dns/private-resolver-hybrid-dns) and [Azure Private Endpoint DNS integration scenarios](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns-integration).
 
-## DNS Resolution - The Play
+## Network Security and Routing
 
-If all is configured correctly, the DNS resolution flow will go something like this:
+A Private Endpoint is just a NIC with a private IP, but its traffic behaves a bit differently than a normal VM NIC—and that's where people get tripped up.
 
->**Client:** Hey Domain Controller, you are my DNS server. I'm looking for *hbteststroageaccount.blob.core.windows.net*
+### NSGs and UDRs
 
->**Domain Controller:** Oh hey Client, I actually can't answer that, I need to go ask the Azure Private Resolver.
+Historically, traffic to a Private Endpoint **bypassed Network Security Groups (NSGs)** and User-Defined Routes (UDRs) on the subnet hosting the endpoint. That behavior has changed: Azure now supports a per-subnet setting (`privateEndpointNetworkPolicies`) that lets NSGs and route tables apply to Private Endpoint traffic. If you're using a hub-and-spoke topology and want to enforce NSGs (or steer Private Endpoint traffic through a firewall via UDR), enable that setting on the subnet hosting your endpoints.
 
->**Domain Controller:** Yo Private Resolver, Client is looking for a private endpoint. I need you to do that magic thing that you do.
+> [!TIP]
+> See [Manage network policies for Private Endpoints](https://learn.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy) for the current behavior and how to enable NSGs/UDRs.
 
->**Private Resolver:** Sure thing, one moment.
+### Reachability across peering, ExpressRoute, and VPN
 
->**Private Resolver:** Mr. Azure Provided DNS, sir. Its me, Private Resolver from Company ABC's VNet. I'm looking for a private endpoint, and here are my linked Private DNS Zones...its probably in there somewhere.
+A Private Endpoint's IP is reachable the same way any other VNet IP is reachable. That means:
 
->**Azure Provided DNS:** Well lets take a look, shall we. I see that the public DNS record has been updated so that the canonical name is a .privatelink. DNS name. And if I just look through your linked private DNS Zones...ah yes...here it is. You have an A RECORD for it right here. You can respond with 10.100.1.25.
+- Peered VNets (including spokes in a hub-and-spoke topology) can reach a Private Endpoint as long as peering allows it and routing/firewall rules permit the flow.
+- On-premises clients connected via ExpressRoute or Site-to-Site VPN can also reach a Private Endpoint, provided routes are advertised and firewalls let the traffic through.
 
->**Private Resolver:** Thanks Azure Provided DNS, you are the best...sir.
+The catch is almost always DNS: even with full network reachability, on-premises clients won't resolve the private IP unless you've extended your private endpoint DNS strategy to them (typically via the Private Resolver pattern described above).
 
->**Azure Provided DNS:** Remember, if I don't find it in your linked private DNS zones, I can't give you the public endpoint's address unless you enabled Fallback to Internet!
+## Cost Considerations
 
->**Private Resolver:** Ok, Domain Controller, I got that address for you. 10.100.1.25.
+Private Endpoints are not free, and the costs are easy to overlook when you're focused on getting traffic flowing:
 
->**Domain Controller:** Alright Client, the private address is 10.100.1.25.
+- Each Private Endpoint has an hourly charge plus a per-GB inbound and outbound data processing charge.
+- Azure DNS Private Resolver bills hourly per inbound/outbound endpoint and per million DNS queries.
+- Private DNS zones themselves are inexpensive, but a sprawl of duplicated zones (the anti-pattern called out in the [Organization](#organization) section) inflates management overhead more than cost.
 
->**Client:** Thanks Domain Controller, now lets just hope that Firewall lets me through!
+> [!TIP]
+> See [Azure Private Link pricing](https://azure.microsoft.com/pricing/details/private-link/) and [Azure DNS pricing](https://azure.microsoft.com/pricing/details/dns/) for current rates.
+
+## Operational Gotchas
+
+A few things that bite teams in production:
+
+- **Stale DNS records on deletion.** If you delete a Private Endpoint that was created with the "Integrate with private DNS zone" option, the A record in the private DNS zone may not be cleaned up automatically (especially if the zone was managed inconsistently). Audit your zones periodically and remove orphaned records.
+- **Re-creating a Private Endpoint to the same service can cause IP changes.** If clients have cached the old IP (or you've hard-coded it somewhere), expect breakage.
+- **One Private Endpoint per sub-resource.** Don't assume a single endpoint to a storage account covers everything—blob and file each need their own.
+- **Region matters.** A Private Endpoint and the PaaS instance it targets do not have to be in the same region, but cross-region traffic incurs bandwidth charges and adds latency.
+
+## DNS Resolution Walkthrough
+
+If everything is wired up correctly, here's how a single resolution flows from a client all the way to a Private Endpoint IP. Imagine a client in an Azure VNet (or on-premises) trying to reach `hbteststorageaccount.blob.core.windows.net`:
+
+1. **Client → Domain Controller.** The client asks its configured DNS server—an Active Directory domain controller—to resolve the storage account FQDN.
+2. **Domain Controller → Private Resolver.** The domain controller has a conditional forwarder for `privatelink.blob.core.windows.net` (and other private endpoint zones) pointing at the Azure DNS Private Resolver's inbound endpoint. It forwards the query there.
+3. **Private Resolver → Azure-provided DNS (168.63.129.16).** Because the Private Resolver lives in an Azure VNet configured to use the Azure-provided DNS service, its query to the magic IP is answered in the context of that VNet, with full visibility into any private DNS zones linked to it.
+4. **Azure-provided DNS lookup.** Azure DNS sees that the public record for the storage account is a CNAME to `hbteststorageaccount.privatelink.blob.core.windows.net`. It then checks the linked private DNS zone, finds the matching A record (created when the Private Endpoint was provisioned), and returns the private IP—e.g., `10.100.1.25`.
+5. **Response trip back.** The Private Resolver returns the answer to the domain controller, which returns it to the client.
+6. **Client connects.** The client opens its connection to `10.100.1.25` over the private network. From here, normal routing, NSGs, and firewall rules apply—DNS got you the IP, but it's still up to your network design to actually let the packets through.
+
+A couple of subtleties worth highlighting:
+
+- If the private DNS zone is missing the A record (or isn't linked to the resolver's VNet), Azure DNS returns the *public* IP via the CNAME chain. Your traffic will then try to leave through the public path—often blocked by firewalls, often confusing to diagnose.
+- The "Fallback to Internet" feature on a private DNS zone is what allows that public-IP fallback when a record is missing. It's useful in a few specific cases (third-party Private Link services), but for your own endpoints it usually masks misconfiguration rather than fixing it.
