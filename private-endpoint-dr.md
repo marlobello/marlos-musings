@@ -18,7 +18,7 @@ Azure SQL has one of the best Disaster Recovery stories in Azure. By leveraging 
 
 What truly makes geo-replication unique from a private endpoint perspective, is that by design both the primary and secondary (read-only) can be active at the same time. Thus, (contrary to what I stated above) you CAN actually have both private endpoints up and in use (one is read-only) at the same time.
 
-In the event of a failover, public DNS record for the failover group will swap to point to the newly promoted primary endpoint and your disaster region private endpoint will be immediately be available and service read/write operations.
+In the event of a failover, the public DNS record for the failover group swaps to point to the newly promoted primary, and your disaster region private endpoint immediately becomes available to service read/write operations.
 
 >[!TIP]
 > This blog post describes this process in great detail. https://blog.hompus.nl/2021/04/27/using-private-link-with-a-failover-group-for-azure-sql-database/
@@ -33,7 +33,7 @@ If you choose not to use active geo-replication and failover groups, you will ne
 
 Similar to Azure SQL active geo-replication, Storage accounts provide disaster recovery capabilities as well through GRS, RA-GRS, GZRS, and RA-GZRS. You can create private endpoints to both the primary and secondary (read-only) endpoints.
 
-Unfortunately without the abstraction layer of failover groups, the failover does not allow the the secondary private endpoint to service requests to the newly promoted primary endpoint. The original private endpoint connects to the newly promoted primary endpoint in the secondary region. This type of failover WILL preserve capability for a service level outage in the primary region, but does not gracefully fail over in the event of a complete outage in the primary region.
+Unfortunately, without the abstraction layer of failover groups, a storage account failover does not allow the secondary private endpoint to service requests against the newly promoted primary. Instead, the original (primary region) private endpoint reconnects to the newly promoted primary in the secondary region. This preserves availability during a service-level outage of Storage in the primary region, but does not gracefully fail over if the primary region itself is completely unavailable.
 
 To protect against a complete region failure, you must follow the general guidance above. You can see below that in the event of a total regional outage, **productionstorageaccountA**, its private endpoint, and the primary private resolver all become unavailable.
 
@@ -58,7 +58,7 @@ Alternatively, there is an option to have a second private DNS zone pre-created 
 
 Azure Key Vault does not currently offer customer managed geo-redundancy. Microsoft does maintain failover capability in the event of a non-recoverable region outage. The timing of this failover is at the discretion of Microsoft. To ensure that Key Vaults (and their associated private endpoints) are able to meet customer defined SLAs, a secondary key vault must be maintained in the DR region.
 
-Synchronization of these keys, secretes, and certificates between key vaults is NOT automatic. Given that a DR key vault would be maintained, private endpoints to the DR key vault will not conflict with the production key vault and both private endpoints can co-exist. In the event of a DR, application configuration changes may be required to access the DR key vault.
+Synchronization of keys, secrets, and certificates between key vaults is NOT automatic. Because the DR key vault is a separate resource, its private endpoint does not conflict with the production key vault's private endpoint, and both can co-exist. In the event of a DR failover, application configuration changes may be required to point to the DR key vault.
 
 >[!TIP]
 >For more information about key vault resiliency, see [Reliability in Key Vault](https://learn.microsoft.com/en-us/azure/reliability/reliability-key-vault)
@@ -71,9 +71,9 @@ This allows you to stand up both private endpoints at the same time (similar to 
 
 Also similar to Key Vault, your calling client application must be able to switch to call the other private endpoint.
 
-Azure Cache for Redis does support an active-active configuration front-ended by a public load balancer. You may be able to achieve similar with a non-Azure internal load balancer and private endpoints. You cannot achieve this with an Azure internal load balancer because:
-- Azure Internal Load Balancers do not support private endpoints in the back end pool
-- Azure Internal Load Balancers are a regional resources, Azure does not currently offer an global internal load balancer.
+Azure Cache for Redis supports an active-active configuration front-ended by a public load balancer. You may be able to achieve something similar privately with a third-party internal load balancer in front of private endpoints. You cannot achieve this with an Azure Internal Load Balancer because:
+- Azure Internal Load Balancers do not support private endpoints in the backend pool.
+- Azure Internal Load Balancers are regional resources; Azure does not currently offer a global internal load balancer.
 
 >[!TIP]
 >For more information about Azure Cache for Redis, see [Configure active geo-replication for Azure Cache for Redis instances](https://learn.microsoft.com/en-us/azure/redis/how-to-active-geo-replication)

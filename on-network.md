@@ -2,18 +2,18 @@
 
 ## Introduction
 
-A common hurdle for a network engineer to grasp in the difference between public and private networking. Many cloud native services do not live "on the network" or "on a VNet". These services were primarily designed to be accessed over public endpoints over the public internet. Advanced features such as Private Endpoints and Virtual Network Injection have helped blend the different traffic flows, you must understand the nuances to ensure that the traffic gets where you want it to get and secured in a manner that you intend.
+A common hurdle for network engineers is grasping the difference between public and private networking in Azure. Many cloud-native services do not live "on the network" or "on a VNet"—they were originally designed to be accessed via public endpoints over the public internet. Features such as Private Endpoints and Virtual Network Injection have helped blend these traffic flows, but you still need to understand the nuances to ensure traffic reaches the right destination and is secured the way you intend.
 
 > [!NOTE]
 > Public internet traffic may be across the Microsoft network backbone and/or may never leave an Azure datacenter, but it is still utilizing public IP addresses and it routable from the internet. The path that traffic will take is highly dependent upon source, destination, and routing rules between.
 
 ## On network (i.e., Private networking)
 
-Simply put virtual machines and VM based PaaS services are hosted on a virtual network (VNet). These services are "on network". In reality, cloud based "on network" hosting is not all that different from an on-premises or co-lo based datacenter. The control plane is different, but the networking is fundamentally the same.
+Simply put, virtual machines and VM-based PaaS services are hosted on a virtual network (VNet). These services are "on network". In practice, cloud-based "on network" hosting is not all that different from an on-premises or co-located datacenter—the control plane is different, but the networking is fundamentally the same.
 
 Azure VNets should follow RFC1918 rules just like an on-premises datacenter. This allows traffic to flow easily between the two. In fact, if you connect your on-premises datacenter to an Azure VNet via S2S VPN or Express Route, you can consider the combined network as "on network".
 
-Additionally, in some architectures you could have disconnected, independent networks. Since these networks do not connect each would need their own ingress, egress, routing rules, DNS, and other supporting services.
+Additionally, in some architectures you may have disconnected, independent networks. Since these networks do not connect, each would need its own ingress, egress, routing rules, DNS, and other supporting services.
 
 ### Egress
 
@@ -38,7 +38,7 @@ Again, this ingress would be to expose an on-network application to the public i
 
 ## Off network (i.e., Public networking)
 
-Many cloud services are multi-tenant PaaS and SaaS offering. They do not operate on the customers network. They do not have RFC 1918 IP addresses that you can point to as a destination or utilize as a source (with the exception of VNet injection and Private Endpoints). They rely on *shared* Public IPv4 and IPv6 addresses. The public endpoint relies on L7 host headers to properly direct traffic to the desired service. If if you know the public IP address (which is not guaranteed to remain static) of the PaaS service, the service will not respond without accurate host headers in the request.
+Many cloud services are multi-tenant PaaS and SaaS offerings. They do not operate on the customer's network and do not have RFC 1918 IP addresses that you can point to as a destination or use as a source (with the exception of VNet injection and Private Endpoints). Instead, they rely on *shared* public IPv4 and IPv6 addresses, and use L7 host headers to direct traffic to the correct tenant. Even if you know the public IP address of the PaaS service (which is not guaranteed to be static), the service will not respond without the correct host header in the request.
 
 ### Service as the Destination
 
@@ -46,7 +46,7 @@ Azure services vary somewhat in capabilities they support but most work very sim
 
 #### Public Endpoint
 
-Using the FQDN traffic must be allowed from the source (through firewalls or other network technologies) to reach the public endpoint on the internet. The public endpoint can then have its own ACLs which can only allow specific *public* IP address, Azure Virtual Networks (service endpoints), or specific Azure resources.
+Traffic from the source (through firewalls or other network technologies) must be allowed to reach the public endpoint on the internet using its FQDN. The public endpoint can then enforce its own ACLs, which can restrict access to specific *public* IP addresses, Azure Virtual Networks (via service endpoints), or specific Azure resources.
 
 #### Private Endpoint
 
@@ -57,12 +57,12 @@ Standard private endpoints are one way traffic *to* the PaaS service. The servic
 The public endpoint can be completely disabled and services which are on-network will be able to reach the PaaS service over the private endpoint.
 
 > [!NOTE]
-> Private Endpoints only work source systems that are on-network! Other off-network PaaS/SaaS services **cannot** access a private endpoint. If you need to connect a PaaS/SaaS service to another PaaS/SaaS service, this generally needs to be done over a public endpoint.
+> Private Endpoints only work for source systems that are on-network! Other off-network PaaS/SaaS services **cannot** access a private endpoint. If you need to connect one PaaS/SaaS service to another, that traffic generally needs to flow over a public endpoint.
 
 
 ### Service as the Source
 
-Often times PaaS/SaaS services are the source of a traffic flow (e.g., an App Service connecting to a SQL database). That network connection will originate from a shared non-persistent public IP address -- even with a private endpoint attached. Remember that private endpoints cannot originate traffic and send it into your network.
+Often, a PaaS/SaaS service is the *source* of a traffic flow (e.g., an App Service connecting to a SQL database). That outbound connection originates from a shared, non-persistent public IP address—even when the source service has a private endpoint attached to it. Remember: private endpoints are inbound only; they cannot originate traffic into your network.
 
 This makes it difficult to use the target service's network ACLs to control inbound traffic.
 
@@ -70,26 +70,26 @@ This lack of network control point can be difficult to overcome, but here are so
 
 #### Virtual Network Injection
 
-Some PaaS Services can be "injected" into an Azure VNet. Instead of running on shared multi-tenant system, resources will be provisioned on an Azure VNet that you control. The PaaS service moves from off-network to on-network. The backend IP addresses which are the source of calls to the other service (say Azure SQL), will follow routing rules and resolve private endpoints.
+Some PaaS services can be "injected" into an Azure VNet. Instead of running on a shared multi-tenant system, the resources are provisioned into an Azure VNet that you control. The PaaS service effectively moves from off-network to on-network. The backend IP addresses that are the source of calls to other services (say, Azure SQL) will then follow your routing rules and resolve private endpoints normally.
 
 #### Managed Private Endpoints
 
-Some PaaS Services (primarily around data ETL) have a capability called Managed Private Endpoint. This setup is completely transparent to the customer, and does not require private endpoint infrastructure and DNS resolution. This capability allow a service (e.g., Azure Data Factory) to connect a private endpoint of another service (e.g., Azure Storage). This managed private endpoint is only usable by the single instance of the source service--other systems on your network would require a traditional private endpoint.
+Some PaaS services (primarily data ETL services) offer a capability called Managed Private Endpoint. The setup is fully transparent to the customer and does not require you to build private endpoint infrastructure or DNS resolution. It allows a service (e.g., Azure Data Factory) to connect to the private endpoint of another service (e.g., Azure Storage). The managed private endpoint is only usable by the single source service instance that owns it—other systems on your network would still require a traditional private endpoint.
 
 #### Reverse Proxy
 
-A Reverse Proxy can exist based upon any number of technologies, but the principal is the same--you have a publicly facing L7 service with a narrow security profile that proxies traffic to an on-network endpoint. Some examples include:
+A reverse proxy can be built on any number of technologies, but the principle is the same: a publicly facing L7 service with a narrow security profile proxies traffic to an on-network endpoint. Some examples include:
 
 - Azure Application Gateway
-- Microsoft On-premises Data Gateway (Note that this could be installed on an Azure VM. It is better though of as an "on-network data gateway)
-- Azure Virtual Network Data Gateway (The spiritual successor to the On-premises Data Gateway, but must be hosted in an Azure VNet)
+- Microsoft On-premises Data Gateway (this can be installed on an Azure VM, in which case it's better thought of as an "on-network data gateway")
+- Azure Virtual Network Data Gateway (the spiritual successor to the On-premises Data Gateway, but must be hosted in an Azure VNet)
 - 3rd Party (non-Microsoft)
 
 In all cases, the end-to-end flow needs to be understood to ensure the proxy technology supports it.
 
 #### Mitigating Controls
 
-In some cases there might not be a good technical solution to allow PaaS/SaaS to PaaS/SaaS communication over private networking. You may need to allow public access from a large number of internet IP addresses. In these cases, you should look at what mitigating controls (preventative as well as detective) that you can implement to accept the risks of such a configuration. Mitigating controls might include:
+In some cases, there is no good technical solution for PaaS/SaaS to PaaS/SaaS communication over private networking, and you may need to allow public access from a large set of internet IP addresses. When that happens, identify the mitigating controls (both preventative and detective) you can put in place to accept the risk. Mitigating controls might include:
 
 - Strong Authentication
 - Enhanced logging and alerting

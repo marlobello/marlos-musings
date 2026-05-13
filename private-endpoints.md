@@ -79,7 +79,7 @@ To sum up, you need:
 
 ## Public DNS Records
 
-Private Link-able services (is that even a word?) have designated public DNS zones. We need to essentially override that resolution. It's usually best to use the defined DNS zones and avoid custom zones (i.e., storageaccount123.company.com), because most services don't support custom FQDNs.
+Each Private Link-capable service has a designated public DNS zone, and we essentially need to override that resolution. It's usually best to stick with the default DNS zones rather than custom zones (e.g., storageaccount123.company.com), because most services don't support custom FQDNs.
 
 See the public DNS resolution of a blob storage account before a private endpoint is created:
 
